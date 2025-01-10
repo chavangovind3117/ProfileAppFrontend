@@ -1,10 +1,10 @@
-// Import necessary libraries from React and React Native
+// necessary libraries from React and React Native
 import React, { useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native'; // Provides navigation context to the app
 import { createStackNavigator } from '@react-navigation/stack'; // Creates a stack-based navigation
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Import custom screens for the app
+// custom screens for the app
 import LoginScreen from './screens/LoginScreen';
 import ForgetPasswordScreen from './screens/ForgetPasswordScreen';
 import VerifyOTPScreen from './screens/VerifyOTPScreen';
@@ -13,7 +13,6 @@ import ProfileScreen from './screens/ProfileScreen';
 // Initialize the stack navigator
 const Stack = createStackNavigator();
 
-// Define the main App component
 const App = () => {
 
   const [initialRoute, setInitialRoute] = useState(null);
@@ -59,5 +58,4 @@ const App = () => {
   );
 };
 
-// Export the App component as the default export
 export default App;
