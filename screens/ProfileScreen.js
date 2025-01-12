@@ -1,7 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, Alert, Modal, FlatList, ScrollView, SafeAreaView, RefreshControl } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { CommonActions } from '@react-navigation/native';
 import BACKEND_URL from '../config';
+import * as Print from 'expo-print';
+import * as Sharing from 'expo-sharing';
 
 const ProfileScreen = ({ navigation, route }) => {
     // const { userData } = route.params;
@@ -94,6 +97,75 @@ const ProfileScreen = ({ navigation, route }) => {
         fetchData();
     }, [selectedMonth, selectedYear]);
 
+    const exportToPDF = async () => {
+        if (!salaryDetails) {
+            Alert.alert('No Data', 'No salary details available to export.');
+            return;
+        }
+
+        try {
+            // Generate HTML for the PDF
+            const htmlContent = `
+                <html>
+                <head>
+                    <style>
+                        body { font-family: Arial, sans-serif; margin: 20px; }
+                        h1 { text-align: center; color: #333; }
+                        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                        th { background-color: #f4f4f4; }
+                        tr:nth-child(even) { background-color: #f9f9f9; }
+                    </style>
+                </head>
+                <body>
+                    <h1 style="text-align: center;">Profile Details</h1>
+                    <p><strong>Name:</strong> ${userData.EmployeeName}</p>
+                    <p><strong>Designation:</strong> ${userData.Designation}</p>
+                    <p><strong>Employee ID:</strong> ${userData.EmployeeID}</p>
+                    <p><strong>Username:</strong> ${userData.username}</p>
+                    <h1>Salary Details</h1>
+                    <table>
+                        <tr>
+                            <th>Component</th>
+                            <th>Amount</th>
+                        </tr>
+                        <tr>
+                            <td>Basic</td>
+                            <td>${salaryDetails.Basic}</td>
+                        </tr>
+                        <tr>
+                            <td>HRA</td>
+                            <td>${salaryDetails.HRA}</td>
+                        </tr>
+                        <tr>
+                            <td>Medical Allowance</td>
+                            <td>${salaryDetails.MedicalAllowance}</td>
+                        </tr>
+                        <tr>
+                            <td>Conveyance</td>
+                            <td>${salaryDetails.Conveyance}</td>
+                        </tr>
+                        <tr>
+                            <th>Total CTC</th>
+                            <th>${salaryDetails.TotalCTC}</th>
+                        </tr>
+                    </table>
+                </body>
+                </html>
+            `;
+
+            // Create the PDF
+            const { uri } = await Print.printToFileAsync({ html: htmlContent });
+
+            // Share the PDF
+            await Sharing.shareAsync(uri);
+            console.log('PDF shared:', uri);
+        } catch (error) {
+            console.error('Error exporting PDF:', error);
+            Alert.alert('Error', 'An error occurred while exporting the PDF.');
+        }
+    };
+
     // LogOUt Button ---***---
 
     const handleLogout = async () => {
@@ -101,7 +173,13 @@ const ProfileScreen = ({ navigation, route }) => {
             console.log("Logging out...");
             await AsyncStorage.removeItem('userData');
             Alert.alert('Logout Successful', 'You have been logged out.');
-            navigation.navigate('Login');
+            // Navigate to login screen and reset the navigation stack
+            navigation.dispatch(
+                CommonActions.reset({
+                    index: 0,
+                    routes: [{ name: 'Login' }], // Replace with the name of your Login screen
+                })
+            );
         } catch (error) {
             console.error("Error logging out:", error);
         }
@@ -110,9 +188,6 @@ const ProfileScreen = ({ navigation, route }) => {
     return (
         <SafeAreaView style={styles.safeArea}>
             <ScrollView contentContainerStyle={styles.scrollContainer}
-                // refreshControl={
-                //     <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-                // }
                 refreshControl={
                     <RefreshControl
                         refreshing={refreshing}
@@ -286,7 +361,7 @@ const ProfileScreen = ({ navigation, route }) => {
 
                             {/* Buttons */}
                             <View style={styles.buttonContainer}>
-                                <TouchableOpacity style={styles.exportButton}>
+                                <TouchableOpacity style={styles.exportButton} onPress={exportToPDF}>
                                     <Text style={styles.exportButtonText}>Export as PDF</Text>
                                 </TouchableOpacity>
                                 <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
