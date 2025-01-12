@@ -97,6 +97,8 @@ const ProfileScreen = ({ navigation, route }) => {
         fetchData();
     }, [selectedMonth, selectedYear]);
 
+    // Export to PDF Button functionallity ---***---
+
     const exportToPDF = async () => {
         if (!salaryDetails) {
             Alert.alert('No Data', 'No salary details available to export.');
@@ -166,7 +168,7 @@ const ProfileScreen = ({ navigation, route }) => {
         }
     };
 
-    // LogOUt Button ---***---
+    // LogOUt Button functionallity ---***---
 
     const handleLogout = async () => {
         try {
