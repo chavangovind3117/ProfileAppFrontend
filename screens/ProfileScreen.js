@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, Alert, Modal, FlatList, ScrollView, SafeAreaView, RefreshControl } from 'react-native';
+import React, { useEffect, useState, useRef } from 'react';
+import { View, Text, StyleSheet, Image, TouchableOpacity, Alert, Modal, FlatList, ScrollView, SafeAreaView, RefreshControl, AppState } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CommonActions } from '@react-navigation/native';
 import BACKEND_URL from '../config';
@@ -16,6 +16,12 @@ const ProfileScreen = ({ navigation, route }) => {
     const [month, setMonth] = useState();
     const [year, setYear] = useState();
     const [refreshing, setRefreshing] = useState(false);
+    const [appState, setAppState] = useState(AppState.currentState);
+
+    const SESSION_TIMEOUT_DURATION = 1 * 60 * 1000; // 10 minutes
+    const sessionTimeoutRef = useRef(null);
+    // let sessionTimeout;
+
 
     const onRefresh = () => {
         setRefreshing(true);
@@ -42,6 +48,41 @@ const ProfileScreen = ({ navigation, route }) => {
         console.log("selected month and year : ", months[selectedMonth - 1], selectedYear)
     };
 
+    // Session Time Out functionallity ---***---
+
+    const resetSessionTimeout = () => {
+        if (sessionTimeoutRef.current) {
+            clearTimeout(sessionTimeoutRef.current);
+        }
+        sessionTimeoutRef.current = setTimeout(() => {
+            handleLogout();
+            // Automatically log out the user after inactivity 
+        }, SESSION_TIMEOUT_DURATION);
+    };
+
+    const handleUserInteraction = () => {
+        console.log("toucing screen");
+        resetSessionTimeout(); // Reset timeout on any user interaction
+    };
+
+    useEffect(() => {
+        loadUserData();
+        handleUserInteraction();
+        const subscription = AppState.addEventListener('change', nextAppState => {
+            if (appState.match(/inactive|background/) && nextAppState === 'active') {
+                resetSessionTimeout(); // Reset timeout when the app becomes active
+            }
+            setAppState(nextAppState);
+        });
+
+        return () => {
+            if (sessionTimeoutRef.current) {
+                clearTimeout(sessionTimeoutRef.current);
+            } subscription.remove();
+            // Clean up the AppState listener
+        };
+    }, [appState]);
+
     const loadUserData = async () => {
         try {
             console.log("Attempting to load user data from AsyncStorage");
@@ -51,6 +92,7 @@ const ProfileScreen = ({ navigation, route }) => {
                 const parsedUserData = JSON.parse(storedUserData);
                 console.log("Parsed user data:", parsedUserData);
                 setUserData(parsedUserData);
+                resetSessionTimeout();
             } else {
                 console.log("No user data found in AsyncStorage");
                 Alert.alert('Session Expired', 'Please log in again.');
@@ -95,6 +137,7 @@ const ProfileScreen = ({ navigation, route }) => {
     useEffect(() => {
         loadUserData();
         fetchData();
+        resetSessionTimeout();
     }, [selectedMonth, selectedYear]);
 
     // Export to PDF Button functionallity ---***---
@@ -188,7 +231,7 @@ const ProfileScreen = ({ navigation, route }) => {
     };
 
     return (
-        <SafeAreaView style={styles.safeArea}>
+        <SafeAreaView style={styles.safeArea} onTouchStart={handleUserInteraction}>
             <ScrollView contentContainerStyle={styles.scrollContainer}
                 refreshControl={
                     <RefreshControl

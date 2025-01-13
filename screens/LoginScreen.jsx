@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from "react-native";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import BACKEND_URL from '../config.js';
 import { useNavigation } from '@react-navigation/native';
@@ -8,9 +8,11 @@ import axios from "axios";
 const LoginScreen = ({ navigation }) => {
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
+    const [loading, setLoading] = useState(false);
     // const navigation = useNavigation();
 
     const handleLogin = async () => {
+        setLoading(true); // Start loading
         try {
             // const response = await fetch(`http://localhost:5000/profile?username=${username}&password=${password}`);
             const response = await fetch(`${BACKEND_URL}/profile`, {
@@ -34,6 +36,8 @@ const LoginScreen = ({ navigation }) => {
         } catch (error) {
             console.error(error);
             Alert.alert('Error', 'Unable to connect to the server');
+        } finally {
+            setLoading(false); // Stop loading
         }
     };
 
@@ -44,27 +48,34 @@ const LoginScreen = ({ navigation }) => {
     return (
         <View style={styles.container}>
             <View style={styles.subContainer}>
-                <TextInput
-                    placeholder="Username"
-                    placeholderTextColor="#aaa"
-                    style={styles.input}
-                    value={username}
-                    onChangeText={setUsername}
-                />
-                <TextInput
-                    placeholder="Password"
-                    placeholderTextColor="#aaa"
-                    style={styles.input}
-                    secureTextEntry
-                    value={password}
-                    onChangeText={setPassword}
-                />
-                <TouchableOpacity onPress={handleLogin} style={styles.button}>
-                    <Text style={styles.buttonText}>Sign In</Text>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={handleForgetPassword}>
-                    <Text style={styles.linkText}>Forget Password?</Text>
-                </TouchableOpacity>
+                {loading ? (
+                    <ActivityIndicator size="large" color="#f0f0f0" />
+                ) : (
+                    <>
+                        <TextInput
+                            placeholder="Username"
+                            placeholderTextColor="#aaa"
+                            style={styles.input}
+                            value={username}
+                            onChangeText={setUsername}
+                        />
+                        <TextInput
+                            placeholder="Password"
+                            placeholderTextColor="#aaa"
+                            style={styles.input}
+                            secureTextEntry
+                            value={password}
+                            onChangeText={setPassword}
+                        />
+                        <TouchableOpacity onPress={handleLogin} style={styles.button}>
+                            <Text style={styles.buttonText}>Sign In</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity onPress={handleForgetPassword}>
+                            <Text style={styles.linkText}>Forget Password?</Text>
+                        </TouchableOpacity>
+                    </>
+                )}
+
             </View>
 
         </View>
